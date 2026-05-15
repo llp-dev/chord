@@ -1,0 +1,11 @@
+[env]
+RUST_TARGET_PATH = { value = "target-specs", relative = true }
+SEL4_PREFIX = { value = "sel4", relative = true }
+
+[build]
+rustflags = ["-Zunstable-options"]
+
+[unstable]
+unstable-options = true
+build-std = ["core", "alloc", "compiler_builtins"]
+build-std-features = ["compiler-builtins-mem"]

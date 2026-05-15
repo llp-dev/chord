@@ -1,0 +1,15 @@
+[package]
+name = "chord"
+description = "A proof-of-concept for seL4 userland development in Rust"
+readme.workspace = true
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["sel4", "microkernel", "root-task"]
+categories = ["os", "embedded", "no-std"]
+
+[dependencies]
+sel4.workspace = true
+sel4-root-task.workspace = true
