@@ -1,4 +1,4 @@
-/* generated from /app/build/sel4/libsel4/mode_include/64/sel4/shared_types.bf */
+/* generated from /tmp/tmp.X4aQeBMwIp/sel4-src/libsel4/mode_include/64/sel4/shared_types.bf */
 
 #pragma once
 
