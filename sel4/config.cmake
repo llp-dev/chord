@@ -19,7 +19,7 @@ set(KernelSel4Arch x86_64 CACHE STRING "")
 set(KernelMaxNumNodes 1 CACHE STRING "")
 
 # x86
-set(KernelVTX ON CACHE BOOL "")
+set(KernelVTX OFF CACHE BOOL "")
 set(KernelHugePage ON CACHE BOOL "")
 set(KernelSupportPCID ON CACHE BOOL "")
 set(KernelMultiboot1Header OFF CACHE BOOL "")
