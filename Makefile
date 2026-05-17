@@ -44,7 +44,7 @@ _iso: stubs/grub.cfg
 .PHONY: _qemu
 _qemu:
 	@qemu-system-x86_64 \
-		-machine q35,accel=kvm -cpu host -smp 2 -m 1G \
+		-machine q35,accel=kvm -cpu host -smp 2 -m 2G \
 		-serial mon:stdio \
 		-nographic \
 		-no-reboot \
