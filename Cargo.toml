@@ -17,4 +17,3 @@ cargo = "warn"
 
 [workspace.dependencies]
 sel4 = { git = "https://github.com/seL4/rust-sel4", tag = "v4.0.0" }
-sel4-root-task = { git = "https://github.com/seL4/rust-sel4", tag = "v4.0.0" }

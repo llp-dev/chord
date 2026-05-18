@@ -66,7 +66,6 @@ name = "chord"
 version = "0.1.0"
 dependencies = [
  "sel4",
- "sel4-root-task",
 ]
 
 [[package]]
@@ -110,17 +109,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dlmalloc"
-version = "0.2.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f5b01c17f85ee988d832c40e549a64bd89ab2c9f8d8a613bdf5122ae507e294"
-dependencies = [
- "cfg-if",
- "libc",
- "windows-sys",
-]
-
-[[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -141,12 +129,6 @@ dependencies = [
  "typenum",
  "version_check",
 ]
-
-[[package]]
-name = "gimli"
-version = "0.32.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e629b9b98ef3dd8afe6ca2bd0f89306cec16d43d907889945bc5d6687f2f13c7"
 
 [[package]]
 name = "glob"
@@ -183,15 +165,6 @@ checksum = "d7c4b02199fee7c5d21a5ae7d8cfa79a6ef5bb2fc834d6e9058e89c825efdc55"
 dependencies = [
  "cfg-if",
  "windows-link",
-]
-
-[[package]]
-name = "lock_api"
-version = "0.4.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "224399e74b87b5f3557511d98dff8b14089b3dadafcab6bb93eab67d3aace965"
-dependencies = [
- "scopeguard",
 ]
 
 [[package]]
@@ -335,12 +308,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d"
 
 [[package]]
-name = "scopeguard"
-version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
-
-[[package]]
 name = "sel4"
 version = "0.1.0"
 source = "git+https://github.com/seL4/rust-sel4?tag=v4.0.0#7a2321f2d84310ba7a09fe7f5988e6dcecde3566"
@@ -348,14 +315,6 @@ dependencies = [
  "cfg-if",
  "sel4-config",
  "sel4-sys",
-]
-
-[[package]]
-name = "sel4-alloca"
-version = "0.1.0"
-source = "git+https://github.com/seL4/rust-sel4?tag=v4.0.0#7a2321f2d84310ba7a09fe7f5988e6dcecde3566"
-dependencies = [
- "cfg-if",
 ]
 
 [[package]]
@@ -414,110 +373,6 @@ version = "0.1.0"
 source = "git+https://github.com/seL4/rust-sel4?tag=v4.0.0#7a2321f2d84310ba7a09fe7f5988e6dcecde3566"
 dependencies = [
  "serde",
-]
-
-[[package]]
-name = "sel4-ctors-dtors"
-version = "0.1.0"
-source = "git+https://github.com/seL4/rust-sel4?tag=v4.0.0#7a2321f2d84310ba7a09fe7f5988e6dcecde3566"
-
-[[package]]
-name = "sel4-dlmalloc"
-version = "0.1.0"
-source = "git+https://github.com/seL4/rust-sel4?tag=v4.0.0#7a2321f2d84310ba7a09fe7f5988e6dcecde3566"
-dependencies = [
- "dlmalloc",
- "lock_api",
-]
-
-[[package]]
-name = "sel4-elf-header"
-version = "0.1.0"
-source = "git+https://github.com/seL4/rust-sel4?tag=v4.0.0#7a2321f2d84310ba7a09fe7f5988e6dcecde3566"
-
-[[package]]
-name = "sel4-immediate-sync-once-cell"
-version = "0.1.0"
-source = "git+https://github.com/seL4/rust-sel4?tag=v4.0.0#7a2321f2d84310ba7a09fe7f5988e6dcecde3566"
-
-[[package]]
-name = "sel4-initialize-tls"
-version = "0.1.0"
-source = "git+https://github.com/seL4/rust-sel4?tag=v4.0.0#7a2321f2d84310ba7a09fe7f5988e6dcecde3566"
-dependencies = [
- "cfg-if",
- "sel4-alloca",
-]
-
-[[package]]
-name = "sel4-panicking"
-version = "0.1.0"
-source = "git+https://github.com/seL4/rust-sel4?tag=v4.0.0#7a2321f2d84310ba7a09fe7f5988e6dcecde3566"
-dependencies = [
- "cfg-if",
- "sel4-immediate-sync-once-cell",
- "sel4-panicking-env",
- "unwinding",
-]
-
-[[package]]
-name = "sel4-panicking-env"
-version = "0.1.0"
-source = "git+https://github.com/seL4/rust-sel4?tag=v4.0.0#7a2321f2d84310ba7a09fe7f5988e6dcecde3566"
-
-[[package]]
-name = "sel4-root-task"
-version = "0.1.0"
-source = "git+https://github.com/seL4/rust-sel4?tag=v4.0.0#7a2321f2d84310ba7a09fe7f5988e6dcecde3566"
-dependencies = [
- "sel4",
- "sel4-dlmalloc",
- "sel4-immediate-sync-once-cell",
- "sel4-panicking",
- "sel4-panicking-env",
- "sel4-root-task-macros",
- "sel4-runtime-common",
- "sel4-sync",
-]
-
-[[package]]
-name = "sel4-root-task-macros"
-version = "0.1.0"
-source = "git+https://github.com/seL4/rust-sel4?tag=v4.0.0#7a2321f2d84310ba7a09fe7f5988e6dcecde3566"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "sel4-runtime-common"
-version = "0.1.0"
-source = "git+https://github.com/seL4/rust-sel4?tag=v4.0.0#7a2321f2d84310ba7a09fe7f5988e6dcecde3566"
-dependencies = [
- "cfg-if",
- "sel4",
- "sel4-ctors-dtors",
- "sel4-elf-header",
- "sel4-initialize-tls",
- "sel4-panicking-env",
- "sel4-stack",
- "unwinding",
-]
-
-[[package]]
-name = "sel4-stack"
-version = "0.1.0"
-source = "git+https://github.com/seL4/rust-sel4?tag=v4.0.0#7a2321f2d84310ba7a09fe7f5988e6dcecde3566"
-
-[[package]]
-name = "sel4-sync"
-version = "0.1.0"
-source = "git+https://github.com/seL4/rust-sel4?tag=v4.0.0#7a2321f2d84310ba7a09fe7f5988e6dcecde3566"
-dependencies = [
- "lock_api",
- "sel4",
- "sel4-immediate-sync-once-cell",
 ]
 
 [[package]]
@@ -632,15 +487,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
 
 [[package]]
-name = "unwinding"
-version = "0.2.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60612c845ef41699f39dc8c5391f252942c0a88b7d15da672eff0d14101bbd6d"
-dependencies = [
- "gimli",
-]
-
-[[package]]
 name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -651,15 +497,6 @@ name = "windows-link"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5"
-
-[[package]]
-name = "windows-sys"
-version = "0.61.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae137229bcbd6cdf0f7b80a31df61766145077ddf49416a728b02cb3921ff3fc"
-dependencies = [
- "windows-link",
-]
 
 [[package]]
 name = "xml"

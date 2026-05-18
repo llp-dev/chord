@@ -12,4 +12,6 @@ categories = ["os", "embedded", "no-std"]
 
 [dependencies]
 sel4.workspace = true
-sel4-root-task.workspace = true
+
+[lints]
+workspace = true
