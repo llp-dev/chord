@@ -1,0 +1,934 @@
+*[memchr](../index.md) / [memmem](index.md)*
+
+---
+
+# Module `memmem`
+
+This module provides forward and reverse substring search routines.
+
+Unlike the standard library's substring search routines, these work on
+arbitrary bytes. For all non-empty needles, these routines will report exactly
+the same values as the corresponding routines in the standard library. For
+the empty needle, the standard library reports matches only at valid UTF-8
+boundaries, where as these routines will report matches at every position.
+
+Other than being able to work on arbitrary bytes, the primary reason to prefer
+these routines over the standard library routines is that these will generally
+be faster. In some cases, significantly so.
+
+# Example: iterating over substring matches
+
+This example shows how to use [`find_iter`](#find-iter) to find occurrences of a substring
+in a haystack.
+
+```rust
+use memchr::memmem;
+
+let haystack = b"foo bar foo baz foo";
+
+let mut it = memmem::find_iter(haystack, "foo");
+assert_eq!(Some(0), it.next());
+assert_eq!(Some(8), it.next());
+assert_eq!(Some(16), it.next());
+assert_eq!(None, it.next());
+```
+
+# Example: iterating over substring matches in reverse
+
+This example shows how to use [`rfind_iter`](#rfind-iter) to find occurrences of a substring
+in a haystack starting from the end of the haystack.
+
+**NOTE:** This module does not implement double ended iterators, so reverse
+searches aren't done by calling `rev` on a forward iterator.
+
+```rust
+use memchr::memmem;
+
+let haystack = b"foo bar foo baz foo";
+
+let mut it = memmem::rfind_iter(haystack, "foo");
+assert_eq!(Some(16), it.next());
+assert_eq!(Some(8), it.next());
+assert_eq!(Some(0), it.next());
+assert_eq!(None, it.next());
+```
+
+# Example: repeating a search for the same needle
+
+It may be possible for the overhead of constructing a substring searcher to be
+measurable in some workloads. In cases where the same needle is used to search
+many haystacks, it is possible to do construction once and thus to avoid it for
+subsequent searches. This can be done with a [`Finder`](#finder) (or a [`FinderRev`](#finderrev) for
+reverse searches).
+
+```rust
+use memchr::memmem;
+
+let finder = memmem::Finder::new("foo");
+
+assert_eq!(Some(4), finder.find(b"baz foo quux"));
+assert_eq!(None, finder.find(b"quux baz bar"));
+```
+
+## Contents
+
+- [Modules](#modules)
+  - [`searcher`](#searcher)
+- [Structs](#structs)
+  - [`FindIter`](#finditer)
+  - [`FindRevIter`](#findreviter)
+  - [`Finder`](#finder)
+  - [`FinderRev`](#finderrev)
+  - [`FinderBuilder`](#finderbuilder)
+- [Enums](#enums)
+  - [`Prefilter`](#prefilter)
+- [Functions](#functions)
+  - [`find_iter`](#find-iter)
+  - [`rfind_iter`](#rfind-iter)
+  - [`find`](#find)
+  - [`rfind`](#rfind)
+
+## Quick Reference
+
+| Item | Kind | Description |
+|------|------|-------------|
+| [`searcher`](#searcher) | mod |  |
+| [`FindIter`](#finditer) | struct | An iterator over non-overlapping substring matches. |
+| [`FindRevIter`](#findreviter) | struct | An iterator over non-overlapping substring matches in reverse. |
+| [`Finder`](#finder) | struct | A single substring searcher fixed to a particular needle. |
+| [`FinderRev`](#finderrev) | struct | A single substring reverse searcher fixed to a particular needle. |
+| [`FinderBuilder`](#finderbuilder) | struct | A builder for constructing non-default forward or reverse memmem finders. |
+| [`Prefilter`](#prefilter) | enum |  |
+| [`find_iter`](#find-iter) | fn | Returns an iterator over all non-overlapping occurrences of a substring in a haystack. |
+| [`rfind_iter`](#rfind-iter) | fn | Returns a reverse iterator over all non-overlapping occurrences of a substring in a haystack. |
+| [`find`](#find) | fn | Returns the index of the first occurrence of the given needle. |
+| [`rfind`](#rfind) | fn | Returns the index of the last occurrence of the given needle. |
+
+## Modules
+
+- [`searcher`](searcher/index.md)
+
+## Structs
+
+### `FindIter<'h, 'n>`
+
+```rust
+struct FindIter<'h, 'n> {
+    haystack: &'h [u8],
+    prestate: crate::memmem::searcher::PrefilterState,
+    finder: Finder<'n>,
+    pos: usize,
+}
+```
+
+An iterator over non-overlapping substring matches.
+
+Matches are reported by the byte offset at which they begin.
+
+`'h` is the lifetime of the haystack while `'n` is the lifetime of the
+needle.
+
+#### Implementations
+
+- <span id="finditer-new"></span>`fn new(haystack: &'h [u8], finder: Finder<'n>) -> FindIter<'h, 'n>` — [`Finder`](#finder), [`FindIter`](#finditer)
+
+- <span id="finditer-into-owned"></span>`fn into_owned(self) -> FindIter<'h, 'static>` — [`FindIter`](#finditer)
+
+  Convert this iterator into its owned variant, such that it no longer
+
+  borrows the finder and needle.
+
+  
+
+  If this is already an owned iterator, then this is a no-op. Otherwise,
+
+  this copies the needle.
+
+  
+
+  This is only available when the `alloc` feature is enabled.
+
+#### Trait Implementations
+
+##### `impl Clone for FindIter<'h, 'n>`
+
+- <span id="finditer-clone"></span>`fn clone(&self) -> FindIter<'h, 'n>` — [`FindIter`](#finditer)
+
+##### `impl Debug for FindIter<'h, 'n>`
+
+- <span id="finditer-debug-fmt"></span>`fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result`
+
+##### `impl IntoIterator for FindIter<'h, 'n>`
+
+- <span id="finditer-intoiterator-type-item"></span>`type Item = <I as Iterator>::Item`
+
+- <span id="finditer-intoiterator-type-intoiter"></span>`type IntoIter = I`
+
+- <span id="finditer-intoiterator-into-iter"></span>`fn into_iter(self) -> I`
+
+##### `impl Iterator for FindIter<'h, 'n>`
+
+- <span id="finditer-iterator-type-item"></span>`type Item = usize`
+
+- <span id="finditer-iterator-next"></span>`fn next(&mut self) -> Option<usize>`
+
+- <span id="finditer-iterator-size-hint"></span>`fn size_hint(&self) -> (usize, Option<usize>)`
+
+### `FindRevIter<'h, 'n>`
+
+```rust
+struct FindRevIter<'h, 'n> {
+    haystack: &'h [u8],
+    finder: FinderRev<'n>,
+    pos: Option<usize>,
+}
+```
+
+An iterator over non-overlapping substring matches in reverse.
+
+Matches are reported by the byte offset at which they begin.
+
+`'h` is the lifetime of the haystack while `'n` is the lifetime of the
+needle.
+
+#### Fields
+
+- **`pos`**: `Option<usize>`
+
+  When searching with an empty needle, this gets set to `None` after
+  we've yielded the last element at `0`.
+
+#### Implementations
+
+- <span id="findreviter-new"></span>`fn new(haystack: &'h [u8], finder: FinderRev<'n>) -> FindRevIter<'h, 'n>` — [`FinderRev`](#finderrev), [`FindRevIter`](#findreviter)
+
+- <span id="findreviter-into-owned"></span>`fn into_owned(self) -> FindRevIter<'h, 'static>` — [`FindRevIter`](#findreviter)
+
+  Convert this iterator into its owned variant, such that it no longer
+
+  borrows the finder and needle.
+
+  
+
+  If this is already an owned iterator, then this is a no-op. Otherwise,
+
+  this copies the needle.
+
+  
+
+  This is only available when the `std` feature is enabled.
+
+#### Trait Implementations
+
+##### `impl Clone for FindRevIter<'h, 'n>`
+
+- <span id="findreviter-clone"></span>`fn clone(&self) -> FindRevIter<'h, 'n>` — [`FindRevIter`](#findreviter)
+
+##### `impl Debug for FindRevIter<'h, 'n>`
+
+- <span id="findreviter-debug-fmt"></span>`fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result`
+
+##### `impl IntoIterator for FindRevIter<'h, 'n>`
+
+- <span id="findreviter-intoiterator-type-item"></span>`type Item = <I as Iterator>::Item`
+
+- <span id="findreviter-intoiterator-type-intoiter"></span>`type IntoIter = I`
+
+- <span id="findreviter-intoiterator-into-iter"></span>`fn into_iter(self) -> I`
+
+##### `impl Iterator for FindRevIter<'h, 'n>`
+
+- <span id="findreviter-iterator-type-item"></span>`type Item = usize`
+
+- <span id="findreviter-iterator-next"></span>`fn next(&mut self) -> Option<usize>`
+
+### `Finder<'n>`
+
+```rust
+struct Finder<'n> {
+    needle: crate::cow::CowBytes<'n>,
+    searcher: crate::memmem::searcher::Searcher,
+}
+```
+
+A single substring searcher fixed to a particular needle.
+
+The purpose of this type is to permit callers to construct a substring
+searcher that can be used to search haystacks without the overhead of
+constructing the searcher in the first place. This is a somewhat niche
+concern when it's necessary to re-use the same needle to search multiple
+different haystacks with as little overhead as possible. In general, using
+[`find`](#find) is good enough, but `Finder` is useful when you can meaningfully
+observe searcher construction time in a profile.
+
+When the `std` feature is enabled, then this type has an `into_owned`
+version which permits building a `Finder` that is not connected to
+the lifetime of its needle.
+
+#### Implementations
+
+- <span id="finder-new"></span>`fn new<B: ?Sized + AsRef<[u8]>>(needle: &'n B) -> Finder<'n>` — [`Finder`](#finder)
+
+  Create a new finder for the given needle.
+
+- <span id="finder-find"></span>`fn find(&self, haystack: &[u8]) -> Option<usize>`
+
+  Returns the index of the first occurrence of this needle in the given
+
+  haystack.
+
+  
+
+  # Complexity
+
+  
+
+  This routine is guaranteed to have worst case linear time complexity
+
+  with respect to both the needle and the haystack. That is, this runs
+
+  in `O(needle.len() + haystack.len())` time.
+
+  
+
+  This routine is also guaranteed to have worst case constant space
+
+  complexity.
+
+  
+
+  # Examples
+
+  
+
+  Basic usage:
+
+  
+
+  ```rust
+
+  use memchr::memmem::Finder;
+
+  
+
+  let haystack = b"foo bar baz";
+
+  assert_eq!(Some(0), Finder::new("foo").find(haystack));
+
+  assert_eq!(Some(4), Finder::new("bar").find(haystack));
+
+  assert_eq!(None, Finder::new("quux").find(haystack));
+
+  ```
+
+- <span id="finder-find-iter"></span>`fn find_iter<'a, 'h>(self: &'a Self, haystack: &'h [u8]) -> FindIter<'h, 'a>` — [`FindIter`](#finditer)
+
+  Returns an iterator over all occurrences of a substring in a haystack.
+
+  
+
+  # Complexity
+
+  
+
+  This routine is guaranteed to have worst case linear time complexity
+
+  with respect to both the needle and the haystack. That is, this runs
+
+  in `O(needle.len() + haystack.len())` time.
+
+  
+
+  This routine is also guaranteed to have worst case constant space
+
+  complexity.
+
+  
+
+  # Examples
+
+  
+
+  Basic usage:
+
+  
+
+  ```rust
+
+  use memchr::memmem::Finder;
+
+  
+
+  let haystack = b"foo bar foo baz foo";
+
+  let finder = Finder::new(b"foo");
+
+  let mut it = finder.find_iter(haystack);
+
+  assert_eq!(Some(0), it.next());
+
+  assert_eq!(Some(8), it.next());
+
+  assert_eq!(Some(16), it.next());
+
+  assert_eq!(None, it.next());
+
+  ```
+
+- <span id="finder-into-owned"></span>`fn into_owned(self) -> Finder<'static>` — [`Finder`](#finder)
+
+  Convert this finder into its owned variant, such that it no longer
+
+  borrows the needle.
+
+  
+
+  If this is already an owned finder, then this is a no-op. Otherwise,
+
+  this copies the needle.
+
+  
+
+  This is only available when the `alloc` feature is enabled.
+
+- <span id="finder-as-ref"></span>`fn as_ref(&self) -> Finder<'_>` — [`Finder`](#finder)
+
+  Convert this finder into its borrowed variant.
+
+  
+
+  This is primarily useful if your finder is owned and you'd like to
+
+  store its borrowed variant in some intermediate data structure.
+
+  
+
+  Note that the lifetime parameter of the returned finder is tied to the
+
+  lifetime of `self`, and may be shorter than the `'n` lifetime of the
+
+  needle itself. Namely, a finder's needle can be either borrowed or
+
+  owned, so the lifetime of the needle returned must necessarily be the
+
+  shorter of the two.
+
+- <span id="finder-needle"></span>`fn needle(&self) -> &[u8]`
+
+  Returns the needle that this finder searches for.
+
+  
+
+  Note that the lifetime of the needle returned is tied to the lifetime
+
+  of the finder, and may be shorter than the `'n` lifetime. Namely, a
+
+  finder's needle can be either borrowed or owned, so the lifetime of the
+
+  needle returned must necessarily be the shorter of the two.
+
+#### Trait Implementations
+
+##### `impl Clone for Finder<'n>`
+
+- <span id="finder-clone"></span>`fn clone(&self) -> Finder<'n>` — [`Finder`](#finder)
+
+##### `impl Debug for Finder<'n>`
+
+- <span id="finder-debug-fmt"></span>`fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result`
+
+### `FinderRev<'n>`
+
+```rust
+struct FinderRev<'n> {
+    needle: crate::cow::CowBytes<'n>,
+    searcher: crate::memmem::searcher::SearcherRev,
+}
+```
+
+A single substring reverse searcher fixed to a particular needle.
+
+The purpose of this type is to permit callers to construct a substring
+searcher that can be used to search haystacks without the overhead of
+constructing the searcher in the first place. This is a somewhat niche
+concern when it's necessary to re-use the same needle to search multiple
+different haystacks with as little overhead as possible. In general,
+using [`rfind`](#rfind) is good enough, but `FinderRev` is useful when you can
+meaningfully observe searcher construction time in a profile.
+
+When the `std` feature is enabled, then this type has an `into_owned`
+version which permits building a `FinderRev` that is not connected to
+the lifetime of its needle.
+
+#### Implementations
+
+- <span id="finderrev-new"></span>`fn new<B: ?Sized + AsRef<[u8]>>(needle: &'n B) -> FinderRev<'n>` — [`FinderRev`](#finderrev)
+
+  Create a new reverse finder for the given needle.
+
+- <span id="finderrev-rfind"></span>`fn rfind<B: AsRef<[u8]>>(&self, haystack: B) -> Option<usize>`
+
+  Returns the index of the last occurrence of this needle in the given
+
+  haystack.
+
+  
+
+  The haystack may be any type that can be cheaply converted into a
+
+  `&[u8]`. This includes, but is not limited to, `&str` and `&[u8]`.
+
+  
+
+  # Complexity
+
+  
+
+  This routine is guaranteed to have worst case linear time complexity
+
+  with respect to both the needle and the haystack. That is, this runs
+
+  in `O(needle.len() + haystack.len())` time.
+
+  
+
+  This routine is also guaranteed to have worst case constant space
+
+  complexity.
+
+  
+
+  # Examples
+
+  
+
+  Basic usage:
+
+  
+
+  ```rust
+
+  use memchr::memmem::FinderRev;
+
+  
+
+  let haystack = b"foo bar baz";
+
+  assert_eq!(Some(0), FinderRev::new("foo").rfind(haystack));
+
+  assert_eq!(Some(4), FinderRev::new("bar").rfind(haystack));
+
+  assert_eq!(None, FinderRev::new("quux").rfind(haystack));
+
+  ```
+
+- <span id="finderrev-rfind-iter"></span>`fn rfind_iter<'a, 'h>(self: &'a Self, haystack: &'h [u8]) -> FindRevIter<'h, 'a>` — [`FindRevIter`](#findreviter)
+
+  Returns a reverse iterator over all occurrences of a substring in a
+
+  haystack.
+
+  
+
+  # Complexity
+
+  
+
+  This routine is guaranteed to have worst case linear time complexity
+
+  with respect to both the needle and the haystack. That is, this runs
+
+  in `O(needle.len() + haystack.len())` time.
+
+  
+
+  This routine is also guaranteed to have worst case constant space
+
+  complexity.
+
+  
+
+  # Examples
+
+  
+
+  Basic usage:
+
+  
+
+  ```rust
+
+  use memchr::memmem::FinderRev;
+
+  
+
+  let haystack = b"foo bar foo baz foo";
+
+  let finder = FinderRev::new(b"foo");
+
+  let mut it = finder.rfind_iter(haystack);
+
+  assert_eq!(Some(16), it.next());
+
+  assert_eq!(Some(8), it.next());
+
+  assert_eq!(Some(0), it.next());
+
+  assert_eq!(None, it.next());
+
+  ```
+
+- <span id="finderrev-into-owned"></span>`fn into_owned(self) -> FinderRev<'static>` — [`FinderRev`](#finderrev)
+
+  Convert this finder into its owned variant, such that it no longer
+
+  borrows the needle.
+
+  
+
+  If this is already an owned finder, then this is a no-op. Otherwise,
+
+  this copies the needle.
+
+  
+
+  This is only available when the `std` feature is enabled.
+
+- <span id="finderrev-as-ref"></span>`fn as_ref(&self) -> FinderRev<'_>` — [`FinderRev`](#finderrev)
+
+  Convert this finder into its borrowed variant.
+
+  
+
+  This is primarily useful if your finder is owned and you'd like to
+
+  store its borrowed variant in some intermediate data structure.
+
+  
+
+  Note that the lifetime parameter of the returned finder is tied to the
+
+  lifetime of `self`, and may be shorter than the `'n` lifetime of the
+
+  needle itself. Namely, a finder's needle can be either borrowed or
+
+  owned, so the lifetime of the needle returned must necessarily be the
+
+  shorter of the two.
+
+- <span id="finderrev-needle"></span>`fn needle(&self) -> &[u8]`
+
+  Returns the needle that this finder searches for.
+
+  
+
+  Note that the lifetime of the needle returned is tied to the lifetime
+
+  of the finder, and may be shorter than the `'n` lifetime. Namely, a
+
+  finder's needle can be either borrowed or owned, so the lifetime of the
+
+  needle returned must necessarily be the shorter of the two.
+
+#### Trait Implementations
+
+##### `impl Clone for FinderRev<'n>`
+
+- <span id="finderrev-clone"></span>`fn clone(&self) -> FinderRev<'n>` — [`FinderRev`](#finderrev)
+
+##### `impl Debug for FinderRev<'n>`
+
+- <span id="finderrev-debug-fmt"></span>`fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result`
+
+### `FinderBuilder`
+
+```rust
+struct FinderBuilder {
+    prefilter: Prefilter,
+}
+```
+
+A builder for constructing non-default forward or reverse memmem finders.
+
+A builder is primarily useful for configuring a substring searcher.
+Currently, the only configuration exposed is the ability to disable
+heuristic prefilters used to speed up certain searches.
+
+#### Implementations
+
+- <span id="finderbuilder-new"></span>`fn new() -> FinderBuilder` — [`FinderBuilder`](#finderbuilder)
+
+  Create a new finder builder with default settings.
+
+- <span id="finderbuilder-build-forward"></span>`fn build_forward<'n, B: ?Sized + AsRef<[u8]>>(&self, needle: &'n B) -> Finder<'n>` — [`Finder`](#finder)
+
+  Build a forward finder using the given needle from the current
+
+  settings.
+
+- <span id="finderbuilder-build-forward-owned"></span>`fn build_forward_owned<B: Into<alloc::boxed::Box<[u8]>>>(&self, needle: B) -> Finder<'static>` — [`Finder`](#finder)
+
+  Build an owned forward finder using the given needle from the current
+
+  settings.
+
+- <span id="finderbuilder-build-forward-with-ranker"></span>`fn build_forward_with_ranker<'n, R: HeuristicFrequencyRank, B: ?Sized + AsRef<[u8]>>(&self, ranker: R, needle: &'n B) -> Finder<'n>` — [`Finder`](#finder)
+
+  Build a forward finder using the given needle and a custom heuristic
+
+  for determining the frequency of a given byte in the dataset. See
+
+  [`HeuristicFrequencyRank`](../arch/all/packedpair/index.md) for more details.
+
+- <span id="finderbuilder-build-forward-with-ranker-owned"></span>`fn build_forward_with_ranker_owned<R: HeuristicFrequencyRank, B: Into<alloc::boxed::Box<[u8]>>>(&self, ranker: R, needle: B) -> Finder<'static>` — [`Finder`](#finder)
+
+  Build an owned forward finder using the given needle and a custom
+
+  heuristic for determining the frequency of a given byte in the dataset.
+
+  See [`HeuristicFrequencyRank`](../arch/all/packedpair/index.md) for more details.
+
+- <span id="finderbuilder-build-reverse"></span>`fn build_reverse<'n, B: ?Sized + AsRef<[u8]>>(&self, needle: &'n B) -> FinderRev<'n>` — [`FinderRev`](#finderrev)
+
+  Build a reverse finder using the given needle from the current
+
+  settings.
+
+- <span id="finderbuilder-build-reverse-owned"></span>`fn build_reverse_owned<B: Into<alloc::boxed::Box<[u8]>>>(&self, needle: B) -> FinderRev<'static>` — [`FinderRev`](#finderrev)
+
+  Build an owned reverse finder using the given needle from the current
+
+  settings.
+
+- <span id="finderbuilder-prefilter"></span>`fn prefilter(&mut self, prefilter: Prefilter) -> &mut FinderBuilder` — [`PrefilterConfig`](searcher/index.md#prefilterconfig), [`FinderBuilder`](#finderbuilder)
+
+  Configure the prefilter setting for the finder.
+
+  
+
+  See the documentation for [`Prefilter`](searcher/index.md) for more discussion on why
+
+  you might want to configure this.
+
+#### Trait Implementations
+
+##### `impl Clone for FinderBuilder`
+
+- <span id="finderbuilder-clone"></span>`fn clone(&self) -> FinderBuilder` — [`FinderBuilder`](#finderbuilder)
+
+##### `impl Debug for FinderBuilder`
+
+- <span id="finderbuilder-debug-fmt"></span>`fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result`
+
+##### `impl Default for FinderBuilder`
+
+- <span id="finderbuilder-default"></span>`fn default() -> FinderBuilder` — [`FinderBuilder`](#finderbuilder)
+
+## Enums
+
+### `Prefilter`
+
+```rust
+enum Prefilter {
+    None,
+    Auto,
+}
+```
+
+Prefilter controls whether heuristics are used to accelerate searching.
+
+A prefilter refers to the idea of detecting candidate matches very quickly,
+and then confirming whether those candidates are full matches. This
+idea can be quite effective since it's often the case that looking for
+candidates can be a lot faster than running a complete substring search
+over the entire input. Namely, looking for candidates can be done with
+extremely fast vectorized code.
+
+The downside of a prefilter is that it assumes false positives (which are
+candidates generated by a prefilter that aren't matches) are somewhat rare
+relative to the frequency of full matches. That is, if a lot of false
+positives are generated, then it's possible for search time to be worse
+than if the prefilter wasn't enabled in the first place.
+
+Another downside of a prefilter is that it can result in highly variable
+performance, where some cases are extraordinarily fast and others aren't.
+Typically, variable performance isn't a problem, but it may be for your use
+case.
+
+The use of prefilters in this implementation does use a heuristic to detect
+when a prefilter might not be carrying its weight, and will dynamically
+disable its use. Nevertheless, this configuration option gives callers
+the ability to disable prefilters if you have knowledge that they won't be
+useful.
+
+#### Variants
+
+- **`None`**
+
+  Never used a prefilter in substring search.
+
+- **`Auto`**
+
+  Automatically detect whether a heuristic prefilter should be used. If
+  it is used, then heuristics will be used to dynamically disable the
+  prefilter if it is believed to not be carrying its weight.
+
+#### Implementations
+
+- <span id="prefilterconfig-is-none"></span>`fn is_none(&self) -> bool`
+
+  Returns true when this prefilter is set to the `None` variant.
+
+#### Trait Implementations
+
+##### `impl Clone for PrefilterConfig`
+
+- <span id="prefilterconfig-clone"></span>`fn clone(&self) -> PrefilterConfig` — [`PrefilterConfig`](searcher/index.md#prefilterconfig)
+
+##### `impl Copy for PrefilterConfig`
+
+##### `impl Debug for PrefilterConfig`
+
+- <span id="prefilterconfig-debug-fmt"></span>`fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result`
+
+##### `impl Default for PrefilterConfig`
+
+- <span id="prefilterconfig-default"></span>`fn default() -> PrefilterConfig` — [`PrefilterConfig`](searcher/index.md#prefilterconfig)
+
+## Functions
+
+### `find_iter`
+
+```rust
+fn find_iter<'h, 'n, N: 'n + ?Sized + AsRef<[u8]>>(haystack: &'h [u8], needle: &'n N) -> FindIter<'h, 'n>
+```
+
+Returns an iterator over all non-overlapping occurrences of a substring in
+a haystack.
+
+# Complexity
+
+This routine is guaranteed to have worst case linear time complexity
+with respect to both the needle and the haystack. That is, this runs
+in `O(needle.len() + haystack.len())` time.
+
+This routine is also guaranteed to have worst case constant space
+complexity.
+
+# Examples
+
+Basic usage:
+
+```rust
+use memchr::memmem;
+
+let haystack = b"foo bar foo baz foo";
+let mut it = memmem::find_iter(haystack, b"foo");
+assert_eq!(Some(0), it.next());
+assert_eq!(Some(8), it.next());
+assert_eq!(Some(16), it.next());
+assert_eq!(None, it.next());
+```
+
+### `rfind_iter`
+
+```rust
+fn rfind_iter<'h, 'n, N: 'n + ?Sized + AsRef<[u8]>>(haystack: &'h [u8], needle: &'n N) -> FindRevIter<'h, 'n>
+```
+
+Returns a reverse iterator over all non-overlapping occurrences of a
+substring in a haystack.
+
+# Complexity
+
+This routine is guaranteed to have worst case linear time complexity
+with respect to both the needle and the haystack. That is, this runs
+in `O(needle.len() + haystack.len())` time.
+
+This routine is also guaranteed to have worst case constant space
+complexity.
+
+# Examples
+
+Basic usage:
+
+```rust
+use memchr::memmem;
+
+let haystack = b"foo bar foo baz foo";
+let mut it = memmem::rfind_iter(haystack, b"foo");
+assert_eq!(Some(16), it.next());
+assert_eq!(Some(8), it.next());
+assert_eq!(Some(0), it.next());
+assert_eq!(None, it.next());
+```
+
+### `find`
+
+```rust
+fn find(haystack: &[u8], needle: &[u8]) -> Option<usize>
+```
+
+Returns the index of the first occurrence of the given needle.
+
+Note that if you're are searching for the same needle in many different
+small haystacks, it may be faster to initialize a [`Finder`](#finder) once,
+and reuse it for each search.
+
+# Complexity
+
+This routine is guaranteed to have worst case linear time complexity
+with respect to both the needle and the haystack. That is, this runs
+in `O(needle.len() + haystack.len())` time.
+
+This routine is also guaranteed to have worst case constant space
+complexity.
+
+# Examples
+
+Basic usage:
+
+```rust
+use memchr::memmem;
+
+let haystack = b"foo bar baz";
+assert_eq!(Some(0), memmem::find(haystack, b"foo"));
+assert_eq!(Some(4), memmem::find(haystack, b"bar"));
+assert_eq!(None, memmem::find(haystack, b"quux"));
+```
+
+### `rfind`
+
+```rust
+fn rfind(haystack: &[u8], needle: &[u8]) -> Option<usize>
+```
+
+Returns the index of the last occurrence of the given needle.
+
+Note that if you're are searching for the same needle in many different
+small haystacks, it may be faster to initialize a [`FinderRev`](#finderrev) once,
+and reuse it for each search.
+
+# Complexity
+
+This routine is guaranteed to have worst case linear time complexity
+with respect to both the needle and the haystack. That is, this runs
+in `O(needle.len() + haystack.len())` time.
+
+This routine is also guaranteed to have worst case constant space
+complexity.
+
+# Examples
+
+Basic usage:
+
+```rust
+use memchr::memmem;
+
+let haystack = b"foo bar baz";
+assert_eq!(Some(0), memmem::rfind(haystack, b"foo"));
+assert_eq!(Some(4), memmem::rfind(haystack, b"bar"));
+assert_eq!(Some(8), memmem::rfind(haystack, b"ba"));
+assert_eq!(None, memmem::rfind(haystack, b"quux"));
+```
+

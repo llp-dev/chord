@@ -1,0 +1,668 @@
+**num_bigint > biguint**
+
+# Module: biguint
+
+## Contents
+
+**Structs**
+
+- [`BigUint`](#biguint) - A big unsigned integer type.
+
+**Traits**
+
+- [`ToBigUint`](#tobiguint) - A generic trait for converting a value to a [`BigUint`].
+
+---
+
+## num_bigint::biguint::BigUint
+
+*Struct*
+
+A big unsigned integer type.
+
+**Methods:**
+
+- `fn new(digits: Vec<u32>) -> BigUint` - Creates and initializes a [`BigUint`].
+- `fn from_slice(slice: &[u32]) -> BigUint` - Creates and initializes a [`BigUint`].
+- `fn assign_from_slice(self: & mut Self, slice: &[u32])` - Assign a value to a [`BigUint`].
+- `fn from_bytes_be(bytes: &[u8]) -> BigUint` - Creates and initializes a [`BigUint`].
+- `fn from_bytes_le(bytes: &[u8]) -> BigUint` - Creates and initializes a [`BigUint`].
+- `fn parse_bytes(buf: &[u8], radix: u32) -> Option<BigUint>` - Creates and initializes a [`BigUint`]. The input slice must contain
+- `fn from_radix_be(buf: &[u8], radix: u32) -> Option<BigUint>` - Creates and initializes a [`BigUint`]. Each `u8` of the input slice is
+- `fn from_radix_le(buf: &[u8], radix: u32) -> Option<BigUint>` - Creates and initializes a [`BigUint`]. Each `u8` of the input slice is
+- `fn to_bytes_be(self: &Self) -> Vec<u8>` - Returns the byte representation of the [`BigUint`] in big-endian byte order.
+- `fn to_bytes_le(self: &Self) -> Vec<u8>` - Returns the byte representation of the [`BigUint`] in little-endian byte order.
+- `fn to_u32_digits(self: &Self) -> Vec<u32>` - Returns the `u32` digits representation of the [`BigUint`] ordered least significant digit
+- `fn to_u64_digits(self: &Self) -> Vec<u64>` - Returns the `u64` digits representation of the [`BigUint`] ordered least significant digit
+- `fn iter_u32_digits(self: &Self) -> U32Digits` - Returns an iterator of `u32` digits representation of the [`BigUint`] ordered least
+- `fn iter_u64_digits(self: &Self) -> U64Digits` - Returns an iterator of `u64` digits representation of the [`BigUint`] ordered least
+- `fn to_str_radix(self: &Self, radix: u32) -> String` - Returns the integer formatted as a string in the given radix.
+- `fn to_radix_be(self: &Self, radix: u32) -> Vec<u8>` - Returns the integer in the requested base in big-endian digit order.
+- `fn to_radix_le(self: &Self, radix: u32) -> Vec<u8>` - Returns the integer in the requested base in little-endian digit order.
+- `fn bits(self: &Self) -> u64` - Determines the fewest bits necessary to express the [`BigUint`].
+- `fn pow(self: &Self, exponent: u32) -> Self` - Returns `self ^ exponent`.
+- `fn modpow(self: &Self, exponent: &Self, modulus: &Self) -> Self` - Returns `(self ^ exponent) % modulus`.
+- `fn modinv(self: &Self, modulus: &Self) -> Option<Self>` - Returns the modular multiplicative inverse if it exists, otherwise `None`.
+- `fn sqrt(self: &Self) -> Self` - Returns the truncated principal square root of `self` --
+- `fn cbrt(self: &Self) -> Self` - Returns the truncated principal cube root of `self` --
+- `fn nth_root(self: &Self, n: u32) -> Self` - Returns the truncated principal `n`th root of `self` --
+- `fn trailing_zeros(self: &Self) -> Option<u64>` - Returns the number of least-significant bits that are zero,
+- `fn trailing_ones(self: &Self) -> u64` - Returns the number of least-significant bits that are ones.
+- `fn count_ones(self: &Self) -> u64` - Returns the number of one bits.
+- `fn bit(self: &Self, bit: u64) -> bool` - Returns whether the bit in the given position is set
+- `fn set_bit(self: & mut Self, bit: u64, value: bool)` - Sets or clears the bit in the given position
+
+**Traits:** ConstZero, Unsigned, Eq
+
+**Trait Implementations:**
+
+- **Rem**
+  - `fn rem(self: Self, other: &BigUint) -> BigUint`
+- **Mul**
+  - `fn mul(self: Self, other: &u32) -> BigUint`
+- **Shr**
+  - `fn shr(self: Self, rhs: u128) -> BigUint`
+- **Shr**
+  - `fn shr(self: Self, rhs: &i128) -> BigUint`
+- **One**
+  - `fn one() -> BigUint`
+  - `fn set_one(self: & mut Self)`
+  - `fn is_one(self: &Self) -> bool`
+- **Add**
+  - `fn add(self: Self, other: u128) -> BigUint`
+- **Add**
+  - `fn add(self: Self, other: &u16) -> BigUint`
+- **Div**
+  - `fn div(self: Self, other: &usize) -> BigUint`
+- **CheckedDiv**
+  - `fn checked_div(self: &Self, v: &BigUint) -> Option<BigUint>`
+- **TryFrom**
+  - `fn try_from(value: i128) -> Result<BigUint, TryFromBigIntError<()>>`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: &u64)`
+- **Integer**
+  - `fn div_rem(self: &Self, other: &BigUint) -> (BigUint, BigUint)`
+  - `fn div_floor(self: &Self, other: &BigUint) -> BigUint`
+  - `fn mod_floor(self: &Self, other: &BigUint) -> BigUint`
+  - `fn div_mod_floor(self: &Self, other: &BigUint) -> (BigUint, BigUint)`
+  - `fn div_ceil(self: &Self, other: &BigUint) -> BigUint`
+  - `fn gcd(self: &Self, other: &Self) -> Self` - Calculates the Greatest Common Divisor (GCD) of the number and `other`.
+  - `fn lcm(self: &Self, other: &BigUint) -> BigUint` - Calculates the Lowest Common Multiple (LCM) of the number and `other`.
+  - `fn gcd_lcm(self: &Self, other: &Self) -> (Self, Self)` - Calculates the Greatest Common Divisor (GCD) and
+  - `fn divides(self: &Self, other: &BigUint) -> bool` - Deprecated, use `is_multiple_of` instead.
+  - `fn is_multiple_of(self: &Self, other: &BigUint) -> bool` - Returns `true` if the number is a multiple of `other`.
+  - `fn is_even(self: &Self) -> bool` - Returns `true` if the number is divisible by `2`.
+  - `fn is_odd(self: &Self) -> bool` - Returns `true` if the number is not divisible by `2`.
+  - `fn next_multiple_of(self: &Self, other: &Self) -> Self` - Rounds up to nearest multiple of argument.
+  - `fn prev_multiple_of(self: &Self, other: &Self) -> Self` - Rounds down to nearest multiple of argument.
+  - `fn dec(self: & mut Self)`
+  - `fn inc(self: & mut Self)`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: i64)`
+- **Pow**
+  - `fn pow(self: Self, exp: u8) -> BigUint`
+- **Div**
+  - `fn div(self: Self, other: u64) -> BigUint`
+- **ToPrimitive**
+  - `fn to_i64(self: &Self) -> Option<i64>`
+  - `fn to_i128(self: &Self) -> Option<i128>`
+  - `fn to_u64(self: &Self) -> Option<u64>`
+  - `fn to_u128(self: &Self) -> Option<u128>`
+  - `fn to_f32(self: &Self) -> Option<f32>`
+  - `fn to_f64(self: &Self) -> Option<f64>`
+- **Shl**
+  - `fn shl(self: Self, rhs: u128) -> BigUint`
+- **Shl**
+  - `fn shl(self: Self, rhs: &i128) -> BigUint`
+- **LowerHex**
+  - `fn fmt(self: &Self, f: & mut fmt::Formatter) -> fmt::Result`
+- **Rem**
+  - `fn rem(self: Self, other: &u128) -> BigUint`
+- **Add**
+  - `fn add(self: Self, other: &u32) -> BigUint`
+- **Product**
+  - `fn product<I>(iter: I) -> Self`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: &u32)`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: i64)`
+- **Sub**
+  - `fn sub(self: Self, other: &u8) -> BigUint`
+- **Shr**
+  - `fn shr(self: Self, rhs: u64) -> BigUint`
+- **DivAssign**
+  - `fn div_assign(self: & mut Self, other: &BigUint)`
+- **SubAssign**
+  - `fn sub_assign(self: & mut Self, other: u16)`
+- **Shr**
+  - `fn shr(self: Self, rhs: &i64) -> BigUint`
+- **MulAssign**
+  - `fn mul_assign(self: & mut Self, other: BigUint)`
+- **Pow**
+  - `fn pow(self: Self, exp: &u8) -> BigUint`
+- **AddAssign**
+  - `fn add_assign(self: & mut Self, other: BigUint)`
+- **Mul**
+  - `fn mul(self: Self, other: u32) -> BigUint`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: &u32)`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: i32)`
+- **RemAssign**
+  - `fn rem_assign(self: & mut Self, other: u64)`
+- **Sub**
+  - `fn sub(self: Self, other: BigUint) -> BigUint`
+- **Shl**
+  - `fn shl(self: Self, rhs: u64) -> BigUint`
+- **Sum**
+  - `fn sum<I>(iter: I) -> Self`
+- **Shl**
+  - `fn shl(self: Self, rhs: &i64) -> BigUint`
+- **BitXorAssign**
+  - `fn bitxor_assign(self: & mut Self, other: &BigUint)`
+- **Div**
+  - `fn div(self: Self, other: &u8) -> BigUint`
+- **Pow**
+  - `fn pow(self: Self, exp: u128) -> BigUint`
+- **DivAssign**
+  - `fn div_assign(self: & mut Self, other: u16)`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: &u16)`
+- **PartialEq**
+  - `fn eq(self: &Self, other: &BigUint) -> bool`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: i32)`
+- **Add**
+  - `fn add(self: Self, other: &BigUint) -> BigUint`
+- **MulAssign**
+  - `fn mul_assign(self: & mut Self, other: u8)`
+- **Shr**
+  - `fn shr(self: Self, rhs: u32) -> BigUint`
+- **Octal**
+  - `fn fmt(self: &Self, f: & mut fmt::Formatter) -> fmt::Result`
+- **Add**
+  - `fn add(self: Self, other: u32) -> BigUint`
+- **Shr**
+  - `fn shr(self: Self, rhs: &i32) -> BigUint`
+- **Sub**
+  - `fn sub(self: Self, other: &u128) -> BigUint`
+- **Rem**
+  - `fn rem(self: Self, other: usize) -> BigUint`
+- **BitOrAssign**
+  - `fn bitor_assign(self: & mut Self, other: &BigUint)`
+- **Div**
+  - `fn div(self: Self, other: &BigUint) -> BigUint`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: &u16)`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: i16)`
+- **FromStr**
+  - `fn from_str(s: &str) -> Result<BigUint, ParseBigIntError>`
+- **Pow**
+  - `fn pow(self: Self, exp: &u128) -> BigUint`
+- **Shl**
+  - `fn shl(self: Self, rhs: u32) -> BigUint`
+- **PartialOrd**
+  - `fn partial_cmp(self: &Self, other: &BigUint) -> Option<Ordering>`
+- **Shl**
+  - `fn shl(self: Self, rhs: &i32) -> BigUint`
+- **AddAssign**
+  - `fn add_assign(self: & mut Self, other: u8)`
+- **From**
+  - `fn from(n: u128) -> Self`
+- **BitAndAssign**
+  - `fn bitand_assign(self: & mut Self, other: &BigUint)`
+- **Rem**
+  - `fn rem(self: Self, other: u128) -> BigUint`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: &u8)`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: i16)`
+- **Div**
+  - `fn div(self: Self, other: &u128) -> BigUint`
+- **BitXor**
+  - `fn bitxor(self: Self, other: BigUint) -> BigUint`
+- **Shr**
+  - `fn shr(self: Self, rhs: u16) -> BigUint`
+- **Shr**
+  - `fn shr(self: Self, rhs: &i16) -> BigUint`
+- **Num**
+  - `fn from_str_radix(s: &str, radix: u32) -> Result<BigUint, ParseBigIntError>` - Creates and initializes a `BigUint`.
+- **ToBytes**
+  - `fn to_be_bytes(self: &Self) -> <Self as >::Bytes`
+  - `fn to_le_bytes(self: &Self) -> <Self as >::Bytes`
+- **CheckedSub**
+  - `fn checked_sub(self: &Self, v: &BigUint) -> Option<BigUint>`
+- **Pow**
+  - `fn pow(self: Self, exp: u16) -> BigUint`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: &u8)`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: i8)`
+- **BitOr**
+  - `fn bitor(self: Self, other: BigUint) -> BigUint`
+- **ToBigInt**
+  - `fn to_bigint(self: &Self) -> Option<BigInt>`
+- **Shl**
+  - `fn shl(self: Self, rhs: u16) -> BigUint`
+- **Shl**
+  - `fn shl(self: Self, rhs: &i16) -> BigUint`
+- **Mul**
+  - `fn mul(self: Self, other: u16) -> BigUint`
+- **Sub**
+  - `fn sub(self: Self, other: usize) -> BigUint`
+- **Rem**
+  - `fn rem(self: Self, other: u8) -> BigUint`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: i8)`
+- **BitAnd**
+  - `fn bitand(self: Self, other: BigUint) -> BigUint`
+- **Debug**
+  - `fn fmt(self: &Self, f: & mut fmt::Formatter) -> fmt::Result`
+- **Pow**
+  - `fn pow(self: Self, exp: &u16) -> BigUint`
+- **Shr**
+  - `fn shr(self: Self, rhs: u8) -> BigUint`
+- **MulAssign**
+  - `fn mul_assign(self: & mut Self, other: u128)`
+- **From**
+  - `fn from(n: u32) -> Self`
+- **Shr**
+  - `fn shr(self: Self, rhs: &i8) -> BigUint`
+- **TryFrom**
+  - `fn try_from(value: &BigInt) -> Result<BigUint, TryFromBigIntError<()>>`
+- **RemAssign**
+  - `fn rem_assign(self: & mut Self, other: usize)`
+- **Add**
+  - `fn add(self: Self, other: u16) -> BigUint`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: usize)`
+- **Div**
+  - `fn div(self: Self, other: usize) -> BigUint`
+- **SubAssign**
+  - `fn sub_assign(self: & mut Self, other: u64)`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: &isize)`
+- **Shl**
+  - `fn shl(self: Self, rhs: u8) -> BigUint`
+- **Shl**
+  - `fn shl(self: Self, rhs: &i8) -> BigUint`
+- **AddAssign**
+  - `fn add_assign(self: & mut Self, other: u128)`
+- **Mul**
+  - `fn mul(self: Self, other: &u64) -> BigUint`
+- **TryFrom**
+  - `fn try_from(value: BigInt) -> Result<BigUint, TryFromBigIntError<BigInt>>`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: usize)`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: &isize)`
+- **Rem**
+  - `fn rem(self: Self, other: u32) -> BigUint`
+- **ToBigUint**
+  - `fn to_biguint(self: &Self) -> Option<BigUint>`
+- **Mul**
+  - `fn mul(self: Self, other: &usize) -> BigUint`
+- **Rem**
+  - `fn rem(self: Self, other: &u16) -> BigUint`
+- **Shr**
+  - `fn shr(self: Self, rhs: &usize) -> BigUint`
+- **Clone**
+  - `fn clone(self: &Self) -> Self`
+  - `fn clone_from(self: & mut Self, other: &Self)`
+- **Sub**
+  - `fn sub(self: Self, other: u8) -> BigUint`
+- **DivAssign**
+  - `fn div_assign(self: & mut Self, other: u64)`
+- **UpperHex**
+  - `fn fmt(self: &Self, f: & mut fmt::Formatter) -> fmt::Result`
+- **RemAssign**
+  - `fn rem_assign(self: & mut Self, other: BigUint)`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: u128)`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: &i128)`
+- **Shl**
+  - `fn shl(self: Self, rhs: &usize) -> BigUint`
+- **Shr**
+  - `fn shr(self: Self, rhs: isize) -> BigUint`
+- **Add**
+  - `fn add(self: Self, other: &u64) -> BigUint`
+- **SubAssign**
+  - `fn sub_assign(self: & mut Self, other: usize)`
+- **Add**
+  - `fn add(self: Self, other: &usize) -> BigUint`
+- **MulAssign**
+  - `fn mul_assign(self: & mut Self, other: &BigUint)`
+- **Sub**
+  - `fn sub(self: Self, other: u128) -> BigUint`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: u128)`
+- **Div**
+  - `fn div(self: Self, other: u8) -> BigUint`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: &i128)`
+- **MulAssign**
+  - `fn mul_assign(self: & mut Self, other: u32)`
+- **FromPrimitive**
+  - `fn from_i64(n: i64) -> Option<BigUint>`
+  - `fn from_i128(n: i128) -> Option<BigUint>`
+  - `fn from_u64(n: u64) -> Option<BigUint>`
+  - `fn from_u128(n: u128) -> Option<BigUint>`
+  - `fn from_f64(n: f64) -> Option<BigUint>`
+- **Pow**
+  - `fn pow(self: Self, exp: u32) -> BigUint`
+- **Rem**
+  - `fn rem(self: Self, other: BigUint) -> BigUint`
+- **Shr**
+  - `fn shr(self: Self, rhs: &u128) -> BigUint`
+- **Shl**
+  - `fn shl(self: Self, rhs: isize) -> BigUint`
+- **Euclid**
+  - `fn div_euclid(self: &Self, v: &BigUint) -> BigUint`
+  - `fn rem_euclid(self: &Self, v: &BigUint) -> BigUint`
+  - `fn div_rem_euclid(self: &Self, v: &Self) -> (Self, Self)`
+- **Sub**
+  - `fn sub(self: Self, other: u32) -> BigUint`
+- **Rem**
+  - `fn rem(self: Self, other: &u32) -> BigUint`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: u64)`
+- **FromBytes**
+  - `fn from_be_bytes(bytes: &<Self as >::Bytes) -> Self`
+  - `fn from_le_bytes(bytes: &<Self as >::Bytes) -> Self`
+- **Sub**
+  - `fn sub(self: Self, other: &u32) -> BigUint`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: &i64)`
+- **DivAssign**
+  - `fn div_assign(self: & mut Self, other: usize)`
+- **Mul**
+  - `fn mul(self: Self, other: &u8) -> BigUint`
+- **Sub**
+  - `fn sub(self: Self, other: &u16) -> BigUint`
+- **AddAssign**
+  - `fn add_assign(self: & mut Self, other: &BigUint)`
+- **Div**
+  - `fn div(self: Self, other: u128) -> BigUint`
+- **MulAssign**
+  - `fn mul_assign(self: & mut Self, other: u16)`
+- **Shl**
+  - `fn shl(self: Self, rhs: &u128) -> BigUint`
+- **Shr**
+  - `fn shr(self: Self, rhs: i128) -> BigUint`
+- **Mul**
+  - `fn mul(self: Self, other: u64) -> BigUint`
+- **AddAssign**
+  - `fn add_assign(self: & mut Self, other: u32)`
+- **Pow**
+  - `fn pow(self: Self, exp: &u32) -> BigUint`
+- **SubAssign**
+  - `fn sub_assign(self: & mut Self, other: BigUint)`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: u64)`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: &i64)`
+- **Mul**
+  - `fn mul(self: Self, other: BigUint) -> BigUint`
+- **Div**
+  - `fn div(self: Self, other: u32) -> BigUint`
+- **Shr**
+  - `fn shr(self: Self, rhs: &u64) -> BigUint`
+- **Shl**
+  - `fn shl(self: Self, rhs: i128) -> BigUint`
+- **Div**
+  - `fn div(self: Self, other: &u32) -> BigUint`
+- **Ord**
+  - `fn cmp(self: &Self, other: &BigUint) -> Ordering`
+- **Add**
+  - `fn add(self: Self, other: &u8) -> BigUint`
+- **Div**
+  - `fn div(self: Self, other: &u16) -> BigUint`
+- **AddAssign**
+  - `fn add_assign(self: & mut Self, other: u16)`
+- **From**
+  - `fn from(n: u8) -> Self`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: u32)`
+- **Add**
+  - `fn add(self: Self, other: u64) -> BigUint`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: &i32)`
+- **RemAssign**
+  - `fn rem_assign(self: & mut Self, other: u128)`
+- **RemAssign**
+  - `fn rem_assign(self: & mut Self, other: u8)`
+- **Sub**
+  - `fn sub(self: Self, other: &BigUint) -> BigUint`
+- **Shl**
+  - `fn shl(self: Self, rhs: &u64) -> BigUint`
+- **DivAssign**
+  - `fn div_assign(self: & mut Self, other: BigUint)`
+- **Shr**
+  - `fn shr(self: Self, rhs: i64) -> BigUint`
+- **Add**
+  - `fn add(self: Self, other: BigUint) -> BigUint`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: u32)`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: &i32)`
+- **Shr**
+  - `fn shr(self: Self, rhs: &u32) -> BigUint`
+- **Shl**
+  - `fn shl(self: Self, rhs: i64) -> BigUint`
+- **Div**
+  - `fn div(self: Self, other: BigUint) -> BigUint`
+- **Mul**
+  - `fn mul(self: Self, other: &BigUint) -> BigUint`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: u16)`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: &i16)`
+- **Shl**
+  - `fn shl(self: Self, rhs: &u32) -> BigUint`
+- **Display**
+  - `fn fmt(self: &Self, f: & mut fmt::Formatter) -> fmt::Result`
+- **Shr**
+  - `fn shr(self: Self, rhs: i32) -> BigUint`
+- **CheckedMul**
+  - `fn checked_mul(self: &Self, v: &BigUint) -> Option<BigUint>`
+- **From**
+  - `fn from(n: usize) -> Self`
+- **Pow**
+  - `fn pow(self: Self, exp: u64) -> BigUint`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: u16)`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: &i16)`
+- **BitXorAssign**
+  - `fn bitxor_assign(self: & mut Self, other: BigUint)`
+- **SubAssign**
+  - `fn sub_assign(self: & mut Self, other: u8)`
+- **Shr**
+  - `fn shr(self: Self, rhs: &u16) -> BigUint`
+- **Rem**
+  - `fn rem(self: Self, other: &u64) -> BigUint`
+- **Shl**
+  - `fn shl(self: Self, rhs: i32) -> BigUint`
+- **Mul**
+  - `fn mul(self: Self, other: usize) -> BigUint`
+- **Rem**
+  - `fn rem(self: Self, other: u16) -> BigUint`
+- **Rem**
+  - `fn rem(self: Self, other: u64) -> BigUint`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: u8)`
+- **TryFrom**
+  - `fn try_from(value: i8) -> Result<BigUint, TryFromBigIntError<()>>`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: &i8)`
+- **BitOrAssign**
+  - `fn bitor_assign(self: & mut Self, other: BigUint)`
+- **CheckedAdd**
+  - `fn checked_add(self: &Self, v: &BigUint) -> Option<BigUint>`
+- **RemAssign**
+  - `fn rem_assign(self: & mut Self, other: u32)`
+- **Pow**
+  - `fn pow(self: Self, exp: &u64) -> BigUint`
+- **CheckedEuclid**
+  - `fn checked_div_euclid(self: &Self, v: &BigUint) -> Option<BigUint>`
+  - `fn checked_rem_euclid(self: &Self, v: &BigUint) -> Option<BigUint>`
+  - `fn checked_div_rem_euclid(self: &Self, v: &Self) -> Option<(Self, Self)>`
+- **Shl**
+  - `fn shl(self: Self, rhs: &u16) -> BigUint`
+- **From**
+  - `fn from(x: bool) -> Self`
+- **Shr**
+  - `fn shr(self: Self, rhs: i16) -> BigUint`
+- **BitXor**
+  - `fn bitxor(self: Self, other: &BigUint) -> BigUint`
+- **Roots**
+  - `fn nth_root(self: &Self, n: u32) -> Self`
+  - `fn sqrt(self: &Self) -> Self`
+  - `fn cbrt(self: &Self) -> Self`
+- **Mul**
+  - `fn mul(self: Self, other: &u128) -> BigUint`
+- **DivAssign**
+  - `fn div_assign(self: & mut Self, other: u8)`
+- **Hash**
+  - `fn hash<H>(self: &Self, state: & mut H)`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: u8)`
+- **Add**
+  - `fn add(self: Self, other: usize) -> BigUint`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: &i8)`
+- **BitAndAssign**
+  - `fn bitand_assign(self: & mut Self, other: BigUint)`
+- **Binary**
+  - `fn fmt(self: &Self, f: & mut fmt::Formatter) -> fmt::Result`
+- **Shr**
+  - `fn shr(self: Self, rhs: &u8) -> BigUint`
+- **TryFrom**
+  - `fn try_from(value: i16) -> Result<BigUint, TryFromBigIntError<()>>`
+- **Shl**
+  - `fn shl(self: Self, rhs: i16) -> BigUint`
+- **BitOr**
+  - `fn bitor(self: Self, other: &BigUint) -> BigUint`
+- **Pow**
+  - `fn pow(self: Self, exp: &BigUint) -> BigUint`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: &usize)`
+- **SubAssign**
+  - `fn sub_assign(self: & mut Self, other: u128)`
+- **Add**
+  - `fn add(self: Self, other: &u128) -> BigUint`
+- **Sub**
+  - `fn sub(self: Self, other: &u64) -> BigUint`
+- **Shl**
+  - `fn shl(self: Self, rhs: &u8) -> BigUint`
+- **Rem**
+  - `fn rem(self: Self, other: &usize) -> BigUint`
+- **From**
+  - `fn from(n: u64) -> Self`
+- **Shr**
+  - `fn shr(self: Self, rhs: i8) -> BigUint`
+- **Mul**
+  - `fn mul(self: Self, other: u8) -> BigUint`
+- **BitAnd**
+  - `fn bitand(self: Self, other: &BigUint) -> BigUint`
+- **Sub**
+  - `fn sub(self: Self, other: u16) -> BigUint`
+- **TryFrom**
+  - `fn try_from(value: i32) -> Result<BigUint, TryFromBigIntError<()>>`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: &usize)`
+- **SubAssign**
+  - `fn sub_assign(self: & mut Self, other: u32)`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: isize)`
+- **Pow**
+  - `fn pow(self: Self, exp: BigUint) -> BigUint`
+- **Shl**
+  - `fn shl(self: Self, rhs: i8) -> BigUint`
+- **DivAssign**
+  - `fn div_assign(self: & mut Self, other: u128)`
+- **MulAssign**
+  - `fn mul_assign(self: & mut Self, other: usize)`
+- **MulAssign**
+  - `fn mul_assign(self: & mut Self, other: u64)`
+- **Div**
+  - `fn div(self: Self, other: &u64) -> BigUint`
+- **Zero**
+  - `fn zero() -> BigUint`
+  - `fn set_zero(self: & mut Self)`
+  - `fn is_zero(self: &Self) -> bool`
+- **Add**
+  - `fn add(self: Self, other: u8) -> BigUint`
+- **RemAssign**
+  - `fn rem_assign(self: & mut Self, other: &BigUint)`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: &u128)`
+- **Div**
+  - `fn div(self: Self, other: u16) -> BigUint`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: isize)`
+- **TryFrom**
+  - `fn try_from(value: i64) -> Result<BigUint, TryFromBigIntError<()>>`
+- **Pow**
+  - `fn pow(self: Self, exp: usize) -> BigUint`
+- **Shr**
+  - `fn shr(self: Self, rhs: usize) -> BigUint`
+- **Shr**
+  - `fn shr(self: Self, rhs: &isize) -> BigUint`
+- **DivAssign**
+  - `fn div_assign(self: & mut Self, other: u32)`
+- **Default**
+  - `fn default() -> BigUint`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: &u128)`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: i128)`
+- **AddAssign**
+  - `fn add_assign(self: & mut Self, other: usize)`
+- **Mul**
+  - `fn mul(self: Self, other: u128) -> BigUint`
+- **From**
+  - `fn from(n: u16) -> Self`
+- **Mul**
+  - `fn mul(self: Self, other: &u16) -> BigUint`
+- **AddAssign**
+  - `fn add_assign(self: & mut Self, other: u64)`
+- **Sub**
+  - `fn sub(self: Self, other: &usize) -> BigUint`
+- **Rem**
+  - `fn rem(self: Self, other: &u8) -> BigUint`
+- **Shl**
+  - `fn shl(self: Self, rhs: usize) -> BigUint`
+- **Shl**
+  - `fn shl(self: Self, rhs: &isize) -> BigUint`
+- **RemAssign**
+  - `fn rem_assign(self: & mut Self, other: u16)`
+- **SubAssign**
+  - `fn sub_assign(self: & mut Self, other: &BigUint)`
+- **TryFrom**
+  - `fn try_from(value: isize) -> Result<BigUint, TryFromBigIntError<()>>`
+- **Pow**
+  - `fn pow(self: Self, exp: &usize) -> BigUint`
+- **Sub**
+  - `fn sub(self: Self, other: u64) -> BigUint`
+- **ShrAssign**
+  - `fn shr_assign(self: & mut Self, rhs: &u64)`
+- **ShlAssign**
+  - `fn shl_assign(self: & mut Self, rhs: i128)`
+
+
+
+## num_bigint::biguint::ToBigUint
+
+*Trait*
+
+A generic trait for converting a value to a [`BigUint`].
+
+**Methods:**
+
+- `to_biguint`: Converts the value of `self` to a [`BigUint`].
+
+
+

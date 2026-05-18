@@ -1,0 +1,113 @@
+*[hashbrown](../../index.md) / [control](../index.md) / [bitmask](index.md)*
+
+---
+
+# Module `bitmask`
+
+## Quick Reference
+
+| Item | Kind | Description |
+|------|------|-------------|
+| [`BitMask`](#bitmask) | struct | A bit mask which contains the result of a `Match` operation on a `Group` and allows iterating through them. |
+| [`BitMaskIter`](#bitmaskiter) | struct | Iterator over the contents of a `BitMask`, returning the indices of set bits. |
+
+## Structs
+
+### `BitMask`
+
+```rust
+struct BitMask(u16);
+```
+
+A bit mask which contains the result of a `Match` operation on a `Group` and
+allows iterating through them.
+
+The bit mask is arranged so that low-order bits represent lower memory
+addresses for group match results.
+
+For implementation reasons, the bits in the set may be sparsely packed with
+groups of 8 bits representing one element. If any of these bits are non-zero
+then this element is considered to true in the mask. If this is the
+case, `BITMASK_STRIDE` will be 8 to indicate a divide-by-8 should be
+performed on counts/indices to normalize this difference. `BITMASK_MASK` is
+similarly a mask of all the actually-used bits.
+
+To iterate over a bit mask, it must be converted to a form where only 1 bit
+is set per element. This is done by applying `BITMASK_ITER_MASK` on the
+mask bits.
+
+#### Implementations
+
+- <span id="bitmask-invert"></span>`fn invert(self) -> Self`
+
+  Returns a new `BitMask` with all bits inverted.
+
+- <span id="bitmask-remove-lowest-bit"></span>`fn remove_lowest_bit(self) -> Self`
+
+  Returns a new `BitMask` with the lowest bit removed.
+
+- <span id="bitmask-any-bit-set"></span>`fn any_bit_set(self) -> bool`
+
+  Returns whether the `BitMask` has at least one set bit.
+
+- <span id="bitmask-lowest-set-bit"></span>`fn lowest_set_bit(self) -> Option<usize>`
+
+  Returns the first set bit in the `BitMask`, if there is one.
+
+- <span id="bitmask-trailing-zeros"></span>`fn trailing_zeros(self) -> usize`
+
+  Returns the number of trailing zeroes in the `BitMask`.
+
+- <span id="bitmask-nonzero-trailing-zeros"></span>`fn nonzero_trailing_zeros(nonzero: core::num::NonZeroU16) -> usize`
+
+  Same as above but takes a `NonZeroBitMaskWord`.
+
+- <span id="bitmask-leading-zeros"></span>`fn leading_zeros(self) -> usize`
+
+  Returns the number of leading zeroes in the `BitMask`.
+
+#### Trait Implementations
+
+##### `impl Clone for BitMask`
+
+- <span id="bitmask-clone"></span>`fn clone(&self) -> BitMask` — [`BitMask`](#bitmask)
+
+##### `impl Copy for BitMask`
+
+##### `impl IntoIterator for BitMask`
+
+- <span id="bitmask-intoiterator-type-item"></span>`type Item = usize`
+
+- <span id="bitmask-intoiterator-type-intoiter"></span>`type IntoIter = BitMaskIter`
+
+- <span id="bitmask-intoiterator-into-iter"></span>`fn into_iter(self) -> BitMaskIter` — [`BitMaskIter`](#bitmaskiter)
+
+### `BitMaskIter`
+
+```rust
+struct BitMaskIter(BitMask);
+```
+
+Iterator over the contents of a `BitMask`, returning the indices of set
+bits.
+
+#### Trait Implementations
+
+##### `impl Clone for BitMaskIter`
+
+- <span id="bitmaskiter-clone"></span>`fn clone(&self) -> BitMaskIter` — [`BitMaskIter`](#bitmaskiter)
+
+##### `impl IntoIterator for BitMaskIter`
+
+- <span id="bitmaskiter-intoiterator-type-item"></span>`type Item = <I as Iterator>::Item`
+
+- <span id="bitmaskiter-intoiterator-type-intoiter"></span>`type IntoIter = I`
+
+- <span id="bitmaskiter-intoiterator-into-iter"></span>`fn into_iter(self) -> I`
+
+##### `impl Iterator for BitMaskIter`
+
+- <span id="bitmaskiter-iterator-type-item"></span>`type Item = usize`
+
+- <span id="bitmaskiter-iterator-next"></span>`fn next(&mut self) -> Option<usize>`
+

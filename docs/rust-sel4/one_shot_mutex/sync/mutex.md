@@ -1,0 +1,84 @@
+**one_shot_mutex > sync > mutex**
+
+# Module: sync::mutex
+
+## Contents
+
+**Structs**
+
+- [`RawOneShotMutex`](#rawoneshotmutex) - A one-shot mutex that panics instead of (dead)locking on contention.
+
+**Type Aliases**
+
+- [`OneShotMutex`](#oneshotmutex) - A [`lock_api::Mutex`] based on [`RawOneShotMutex`].
+- [`OneShotMutexGuard`](#oneshotmutexguard) - A [`lock_api::MutexGuard`] based on [`RawOneShotMutex`].
+
+---
+
+## one_shot_mutex::sync::mutex::OneShotMutex
+
+*Type Alias*: `lock_api::Mutex<RawOneShotMutex, T>`
+
+A [`lock_api::Mutex`] based on [`RawOneShotMutex`].
+
+
+
+## one_shot_mutex::sync::mutex::OneShotMutexGuard
+
+*Type Alias*: `lock_api::MutexGuard<'a, RawOneShotMutex, T>`
+
+A [`lock_api::MutexGuard`] based on [`RawOneShotMutex`].
+
+
+
+## one_shot_mutex::sync::mutex::RawOneShotMutex
+
+*Struct*
+
+A one-shot mutex that panics instead of (dead)locking on contention.
+
+This mutex allows no contention and panics instead of blocking on [`lock`] if it is already locked.
+This is useful in situations where contention would be a bug,
+such as in single-threaded programs that would deadlock on contention.
+
+This mutex should be used through [`OneShotMutex`].
+
+[`lock`]: Self::lock
+
+# Examples
+
+```
+use one_shot_mutex::sync::OneShotMutex;
+
+static X: OneShotMutex<i32> = OneShotMutex::new(42);
+
+// This is equivalent to `X.try_lock().unwrap()`.
+let x = X.lock();
+
+// This panics instead of deadlocking.
+// let x2 = X.lock();
+
+// Once we unlock the mutex, we can lock it again.
+drop(x);
+let x = X.lock();
+```
+
+**Methods:**
+
+- `fn new() -> Self`
+
+**Trait Implementations:**
+
+- **Default**
+  - `fn default() -> Self`
+- **RawMutexFair**
+  - `fn unlock_fair(self: &Self)`
+  - `fn bump(self: &Self)`
+- **RawMutex**
+  - `fn lock(self: &Self)`
+  - `fn try_lock(self: &Self) -> bool`
+  - `fn unlock(self: &Self)`
+  - `fn is_locked(self: &Self) -> bool`
+
+
+

@@ -1,0 +1,51 @@
+*[rustversion](../index.md) / [constfn](index.md)*
+
+---
+
+# Module `constfn`
+
+## Quick Reference
+
+| Item | Kind | Description |
+|------|------|-------------|
+| [`Qualifiers`](#qualifiers) | enum |  |
+| [`insert_const`](#insert-const) | fn |  |
+
+## Enums
+
+### `Qualifiers`
+
+```rust
+enum Qualifiers {
+    None,
+    Async,
+    Unsafe,
+    Extern,
+    Abi,
+}
+```
+
+#### Implementations
+
+- <span id="qualifiers-from-ident"></span>`fn from_ident(ident: &Ident) -> Self`
+
+#### Trait Implementations
+
+##### `impl PartialEq for Qualifiers`
+
+- <span id="qualifiers-partialeq-eq"></span>`fn eq(&self, other: &Qualifiers) -> bool` — [`Qualifiers`](#qualifiers)
+
+##### `impl PartialOrd for Qualifiers`
+
+- <span id="qualifiers-partialord-partial-cmp"></span>`fn partial_cmp(&self, other: &Qualifiers) -> option::Option<cmp::Ordering>` — [`Qualifiers`](#qualifiers)
+
+##### `impl StructuralPartialEq for Qualifiers`
+
+## Functions
+
+### `insert_const`
+
+```rust
+fn insert_const(input: proc_macro::TokenStream, const_span: proc_macro::Span) -> std::result::Result<proc_macro::TokenStream, Error>
+```
+
