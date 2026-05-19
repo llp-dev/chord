@@ -15,7 +15,8 @@
 //!   constructor [`Bootstrap::new`].
 //! - [`cspace`] — `CSpace` guard configuration and `CPtr` encoding functions.
 //! - [`error`] — [`BootstrapError`] enum for fallible bootstrap operations.
-//! - [`pool`] — [`Pool`] and [`PoolSize`] types for capability pool management.
+//! - [`pool`] — [`Pool`], [`PoolSet`], and [`PoolSize`] types for capability
+//!   pool management.
 //!
 //! # `CSpace` layout after bootstrap
 //!
@@ -44,4 +45,4 @@ pub use bootstrap::Bootstrap;
 #[expect(unused_imports, reason = "public API surface for external consumers")]
 pub use error::BootstrapError;
 #[expect(unused_imports, reason = "public API surface for external consumers")]
-pub use pool::{Pool, PoolSize};
+pub use pool::{Pool, PoolSet, PoolSize};

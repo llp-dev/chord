@@ -18,7 +18,7 @@ pub enum BootstrapError {
     /// [`CNodes`](super::Pool).
     ///
     /// The bootstrap process requires a non-device kernel untyped region with
-    /// `size_bits == 21` (exactly 2 MiB) to create the three pool `CNode`
+    /// `size_bits >= 21` (at least 2 MiB) to create the ten pool `CNode`
     /// capabilities. If no such region exists in the kernel untyped range,
     /// this error is returned.
     NoBackingUntyped,
@@ -26,9 +26,9 @@ pub enum BootstrapError {
     /// Not enough empty [`CSlots`](sel4::init_thread::Slot) in the root
     /// [`CNode`](sel4::cap_type::CNode) for pool [`CNodes`](super::Pool).
     ///
-    /// Three empty slots are needed in the root `CNode` to place the Small,
-    /// Large, and Huge pool `CNode` capabilities. If fewer than three empty
-    /// slots remain, this error is returned.
+    /// Ten empty slots are needed in the root `CNode` to place one pool
+    /// `CNode` per slab size class. If fewer than ten empty slots remain,
+    /// this error is returned.
     NoEmptyCSlots,
 
     /// A seL4 kernel operation failed.
@@ -58,10 +58,16 @@ impl fmt::Display for BootstrapError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::NoBackingUntyped => {
-                write!(f, "no kernel untyped region with size_bits == 21 found")
+                write!(f, "no kernel untyped region with size_bits >= 21 found")
             }
             Self::NoEmptyCSlots => write!(f, "not enough empty CSlots for pool CNodes"),
             Self::Sel4(err) => write!(f, "seL4 error: {err}"),
         }
     }
 }
+
+// `BootstrapError` implements `Error` so it can integrate with future
+// error-handling chains (e.g. `anyhow`-style reporting in a frame allocator).
+// No `source()` is provided because `sel4::Error` does not implement
+// `core::error::Error` itself.
+impl core::error::Error for BootstrapError {}

@@ -68,6 +68,19 @@ run-debug: debug _iso _qemu
 run-release: build_profile=release
 run-release: release _iso _qemu
 
+.PHONY: test
+test: build_profile=debug
+test: debug _iso
+	python3 test.py \
+		qemu-system-x86_64 \
+		-machine q35,accel=kvm -cpu host -smp 2 -m 2G \
+		-serial mon:stdio \
+		-nographic \
+		-no-reboot \
+		-d guest_errors \
+		-cdrom target/chord.iso \
+		-boot d
+
 .PHONY: help
 help:
 	@echo "Available targets:"
@@ -81,4 +94,5 @@ help:
 	@echo "  make image-release  - Build release chord + ISO"
 	@echo "  make run-debug      - Build debug chord + ISO + boot in QEMU"
 	@echo "  make run-release    - Build release chord + ISO + boot in QEMU"
+	@echo "  make test           - Build debug chord + ISO + run in QEMU with test harness"
 	@echo "  make help           - Show this help"

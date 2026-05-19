@@ -7,6 +7,71 @@
 
 use sel4::{BootInfoPtr, debug_println};
 
+/// Threshold in `size_bits` for kilobyte scaling (2^10 = 1024 bytes).
+const KB_THRESHOLD: u8 = 10;
+/// Threshold in `size_bits` for megabyte scaling (2^20 = 1 MiB).
+const MB_THRESHOLD: u8 = 20;
+/// Threshold in `size_bits` for gigabyte scaling (2^30 = 1 GiB).
+const GB_THRESHOLD: u8 = 30;
+/// Threshold in `size_bits` for terabyte scaling (2^40 = 1 TiB).
+const TB_THRESHOLD: u8 = 40;
+
+/// Converts a `size_bits` value to a human-readable size and unit.
+///
+/// Scales from bytes up to terabytes based on the bit shift:
+///
+/// | `bits` range | Unit | Calculation            |
+/// |-------------|------|------------------------|
+/// | `≥ 40`      | TB   | `2^(bits - 40)`        |
+/// | `≥ 30`      | GB   | `2^(bits - 30)`        |
+/// | `≥ 20`      | MB   | `2^(bits - 20)`        |
+/// | `≥ 10`      | KB   | `2^(bits - 10)`        |
+/// | `< 10`      | B    | `2^bits`               |
+///
+/// Uses [`checked_shl`](usize::checked_shl) uniformly across all branches
+/// to guard against shift overflow for extremely large `size_bits` values,
+/// falling back to `usize::MAX`. The `< 10` branch uses `checked_shl` for
+/// consistency, not overflow safety (shifts < 10 cannot overflow `usize`).
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "size_bits from seL4 is always small (< 48), fits u32"
+)]
+fn human_size(bits: usize) -> (usize, &'static str) {
+    if bits >= TB_THRESHOLD as usize {
+        (
+            1usize
+                .checked_shl((bits - TB_THRESHOLD as usize) as u32)
+                .unwrap_or(usize::MAX),
+            "TB",
+        )
+    } else if bits >= GB_THRESHOLD as usize {
+        (
+            1usize
+                .checked_shl((bits - GB_THRESHOLD as usize) as u32)
+                .unwrap_or(usize::MAX),
+            "GB",
+        )
+    } else if bits >= MB_THRESHOLD as usize {
+        (
+            1usize
+                .checked_shl((bits - MB_THRESHOLD as usize) as u32)
+                .unwrap_or(usize::MAX),
+            "MB",
+        )
+    } else if bits >= KB_THRESHOLD as usize {
+        (
+            1usize
+                .checked_shl((bits - KB_THRESHOLD as usize) as u32)
+                .unwrap_or(usize::MAX),
+            "KB",
+        )
+    } else {
+        // Consistency: checked_shl used here even though bits < 10
+        // cannot overflow usize on any platform.
+        (1usize.checked_shl(bits as u32).unwrap_or(usize::MAX), "B")
+    }
+}
+
 /// Dumps the kernel bootinfo structure to the seL4 debug console.
 ///
 /// # What it prints
@@ -72,38 +137,7 @@ pub fn dump_bootinfo(bootinfo: &BootInfoPtr) {
     // Print every entry with human-readable size scaling.
     debug_println!("--- Untyped Memory List ---");
     for (i, ut) in bootinfo.untyped_list().iter().enumerate() {
-        let bits = ut.size_bits();
-
-        // Dynamically scale from bytes up to terabytes based on the bit shift.
-        // size_bits is a small u8 from seL4, so the subtraction always fits u32.
-        // checked_shl guards against shift overflow for extremely large values.
-        #[expect(
-            clippy::cast_possible_truncation,
-            reason = "size_bits is u8, subtraction fits u32"
-        )]
-        let (size, unit) = if bits >= 40 {
-            (
-                1usize.checked_shl((bits - 40) as u32).unwrap_or(usize::MAX),
-                "TB",
-            )
-        } else if bits >= 30 {
-            (
-                1usize.checked_shl((bits - 30) as u32).unwrap_or(usize::MAX),
-                "GB",
-            )
-        } else if bits >= 20 {
-            (
-                1usize.checked_shl((bits - 20) as u32).unwrap_or(usize::MAX),
-                "MB",
-            )
-        } else if bits >= 10 {
-            (
-                1usize.checked_shl((bits - 10) as u32).unwrap_or(usize::MAX),
-                "KB",
-            )
-        } else {
-            (1usize << bits, "B")
-        };
+        let (size, unit) = human_size(ut.size_bits());
 
         debug_println!(
             "  [{:3}] paddr: {:#016x}, size_bits: {:3} ({:3} {}), is_device: {}",

@@ -86,21 +86,31 @@ fn cpuid_supported() -> bool {
     let (original, toggled): (u64, u64);
     // SAFETY: `pushfq`/`popfq` are unprivileged instructions available
     // at any ring level. We restore the original flags after the check.
+    //
+    // Fixed registers (`rax`, `rcx`) prevent LLVM from aliasing both
+    // `out` operands to the same register — if they shared a register,
+    // the `mov`/`btr`/`btc` sequence would operate on a single register,
+    // making `original ^ toggled == 0` and the function always return
+    // `false` (CPUID appears unsupported).
+    //
+    // `rbx` is reserved by LLVM (PIC base register), so `rcx` is used
+    // for the second output. The template uses Rust's default Intel
+    // syntax on x86_64 (destination-first).
     unsafe {
         core::arch::asm!(
             "pushfq",
-            "pop {orig}",
-            "mov {tmp}, {orig}",
-            "btr {tmp}, 21",
-            "btc {tmp}, 21",
-            "push {tmp}",
+            "pop rax",
+            "mov rcx, rax",
+            "btr rcx, 21",
+            "btc rcx, 21",
+            "push rcx",
             "popfq",
             "pushfq",
-            "pop {tmp}",
-            "push {orig}",
+            "pop rcx",
+            "push rax",
             "popfq",
-            orig = out(reg) original,
-            tmp = out(reg) toggled,
+            out("rax") original,
+            out("rcx") toggled,
         );
     }
     (original ^ toggled) & (1 << 21) != 0

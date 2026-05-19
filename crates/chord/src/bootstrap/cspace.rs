@@ -15,6 +15,47 @@
 //! `root_radix` bits to index into the root `CNode`, then uses
 //! `pool_slot_radix` bits to index into the pool `CNode`.
 //!
+//! # `CSpace` layout transformation
+//!
+//! ## Before: flat single-level `CSpace` (kernel-provided)
+//!
+//! ```text
+//! root CNode (4096 slots, radix=12)
+//! ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
+//! │  0  │  1  │  2  │ ... │ TCB │ ... │ VSP │ ... │  ← flat CPtr = slot index
+//! └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
+//!   IPC   ...   ...       TCB       VSPACE   ...
+//! ```
+//!
+//! All capabilities are addressed by their slot index directly. The kernel
+//! places well-known caps (TCB, `VSpace`, IPC buffer, untyped regions) at
+//! fixed indices.
+//!
+//! ## After: two-level `CSpace` (post-bootstrap)
+//!
+//! ```text
+//! root CNode (4096 slots, radix=12)
+//! ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
+//! │  0  │  1  │  2  │ ... │ TCB │ ... │ VSP │ ... │
+//! └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
+//!   IPC   ...   ...       TCB       VSPACE   ...
+//!                     ┌─────┬─────┬─────┐
+//!                     │ S   │ L   │ H   │  ← pool CNode slots
+//!                     └─────┴─────┴─────┘
+//!                       │     │     │
+//!                       ▼     ▼     ▼
+//!                     ┌───┐ ┌───┐ ┌───┐
+//!                     │CNode│ │CNode│ │CNode│  ← pool CNodes (radix=N)
+//!                     └───┘ └───┘ └───┘
+//!                       │     │     │
+//!                       ▼     ▼     ▼
+//!                     [4K]  [2M]  [1G]  ← untyped blocks
+//! ```
+//!
+//! Pool slots are addressed by a two-level `CPtr`:
+//! `(cnode_slot.index << pool_slot_radix) | internal_slot`. The guard
+//! ensures the kernel strips the high bits before walking the tree.
+//!
 //! # Key functions
 //!
 //! - [`expand_current_cspace`] — configures the guard via `tcb_set_space`.
@@ -141,6 +182,16 @@ pub const fn current_tcb(bootstrap: &Bootstrap) -> cap::Tcb {
 /// Resolves the TCB capability through the new `CSpace` layout and invokes
 /// `seL4_TCB_Suspend`. The root task will never be scheduled again after this
 /// call — in a real system, other threads or processes would take over.
+///
+/// # Difference from `sel4::init_thread::suspend_self`
+///
+/// The upstream `sel4::init_thread::suspend_self()` uses the pre-expansion
+/// flat `CPtr` encoding (well-known slot indices). After
+/// [`expand_current_cspace`] configures the guard, that encoding is no longer
+/// valid — all `CPtr` resolution goes through the two-level scheme
+/// (guard → root `CNode` slot → pool-internal slot). This function resolves
+/// the TCB through the expanded `CSpace` using [`current_tcb`], which is the
+/// only correct approach after bootstrap.
 ///
 /// # Panics
 ///

@@ -3,21 +3,17 @@
 //! Replaces `sel4-root-task` with minimal, no-magic startup code:
 //!
 //! 1. [`__chord_entry`] — initializes the IPC buffer, then calls [`crate::main`].
-//! 2. Bump allocator — simple `#[global_allocator]` over a static 5 MiB heap.
+//! 2. talc allocator — `#[global_allocator]` backed by talc (dlmalloc-style),
+//!    initialized at runtime via [`init_heap`].
 //! 3. Panic handler — aborts immediately.
 //! 4. [`image_end`] — returns the first safe virtual address past the ELF image.
 //!
 //! Architecture-specific startup assembly lives in [`arch`](crate::arch).
 
-use core::alloc::{GlobalAlloc, Layout};
 use core::panic::PanicInfo;
-use core::sync::atomic::{AtomicUsize, Ordering};
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const HEAP_SIZE: usize = 5 * 1024 * 1024;
+use sel4::debug_println;
+use talc::{TalcLock, source::Manual};
 
 // ---------------------------------------------------------------------------
 // Rust entry point — called by arch-specific _start with bootinfo in rdi
@@ -36,71 +32,59 @@ unsafe extern "C" fn __chord_entry(bootinfo: *const sel4::BootInfo) -> ! {
     // The IPC buffer pointer is the virtual address where the kernel mapped
     // the root task's IPC buffer page. All seL4 syscalls use this buffer
     // to send/receive message registers.
-    let ipc_buffer = unsafe { bootinfo.ipc_buffer().as_mut().unwrap() };
+    //
+    // SAFETY: The kernel maps the IPC buffer page for the entire lifetime of
+    // the root task, so the `'static` lifetime required by `set_ipc_buffer`
+    // is justified. The pointer is guaranteed non-null by the seL4 boot
+    // protocol — a null pointer would indicate a kernel bug.
+    let ipc_buffer =
+        unsafe { bootinfo.ipc_buffer().as_mut() }.expect("IPC buffer pointer was null");
     sel4::set_ipc_buffer(ipc_buffer);
 
     crate::main(&bootinfo)
 }
 
 // ---------------------------------------------------------------------------
-// Bump allocator
+// talc allocator
 // ---------------------------------------------------------------------------
 
-/// A simple bump allocator that never frees.
+/// Global allocator backed by talc (a dlmalloc-style allocator).
 ///
-/// Allocates sequentially from a static heap. `dealloc` is a no-op — memory is
-/// reclaimed only when the heap pointer is reset (which we never do in this
-/// `PoC`). This is sufficient for a single-threaded root task that only grows
-/// its data structures.
+/// Uses `spinning_top::RawSpinlock` for thread safety (single-core,
+/// no contention in practice). The `Manual` source means the heap
+/// region is provided at runtime via [`init_heap`].
 ///
-/// # Why not a real allocator?
-///
-/// For a `PoC` learning project, the bump allocator is the simplest correct
-/// choice. It has zero fragmentation, zero overhead, and ~30 lines. If we
-/// later need proper deallocation (e.g., dynamic process spawning with
-/// cleanup), we can swap in `linked_list_allocator` or `sel4-dlmalloc`.
-struct BumpAllocator {
-    heap: *mut u8,
-    size: usize,
-    pos: AtomicUsize,
-}
-
-// SAFETY: Single-threaded root task, no concurrent access.
-unsafe impl Sync for BumpAllocator {}
-
-unsafe impl GlobalAlloc for BumpAllocator {
-    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        let pos = self.pos.load(Ordering::Relaxed);
-        let heap_start = self.heap as usize;
-
-        let aligned = (heap_start + pos).next_multiple_of(layout.align());
-        let next = aligned + layout.size();
-        let heap_end = heap_start + self.size;
-
-        if next > heap_end {
-            return core::ptr::null_mut();
-        }
-
-        self.pos.store(next - heap_start, Ordering::Relaxed);
-        aligned as *mut u8
-    }
-
-    unsafe fn dealloc(&self, _ptr: *mut u8, _layout: Layout) {}
-}
-
-/// Static heap memory in BSS.
-///
-/// Treated as a zero-initialized memory region, not as actual data.
-/// Placed in `.bss` explicitly so the kernel maps it writable.
-#[unsafe(link_section = ".bss")]
-static HEAP_STORAGE: [u8; HEAP_SIZE] = [0u8; HEAP_SIZE];
-
+/// Initialized by [`init_heap`] before any allocation occurs.
 #[global_allocator]
-static ALLOCATOR: BumpAllocator = BumpAllocator {
-    heap: core::ptr::addr_of!(HEAP_STORAGE) as *mut u8,
-    size: HEAP_SIZE,
-    pos: AtomicUsize::new(0),
-};
+static ALLOCATOR: TalcLock<spinning_top::RawSpinlock, Manual> = TalcLock::new(Manual);
+
+/// Initializes the global allocator with an exclusive memory region.
+///
+/// # Safety
+///
+/// - Must be called **once**, before any allocation (`Box`, `Vec`,
+///   `String`, `format!`, etc.).
+/// - The region `[base, base+size)` must be valid, writable, and
+///   exclusively owned by the allocator for the remainder of the program.
+/// - No other code may read from or write to this region after the call.
+///
+/// # Panics
+///
+/// Panics if the region is too small for talc's internal metadata
+/// (typically a few hundred bytes on `x86_64`) or is misaligned.
+pub unsafe fn init_heap(base: *mut u8, size: usize) {
+    // SAFETY: Caller guarantees the region is valid, writable, and exclusively
+    // owned by the allocator. claim() requires the same invariants.
+    unsafe {
+        let result = ALLOCATOR.lock().claim(base, size);
+        if result.is_none() {
+            debug_println!(
+                "[chord] ERROR: talc heap claim failed — region too small or misaligned"
+            );
+        }
+        result.expect("talc heap claim failed — region too small or misaligned");
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Panic handler
@@ -108,15 +92,7 @@ static ALLOCATOR: BumpAllocator = BumpAllocator {
 
 #[panic_handler]
 fn panic(_info: &PanicInfo<'_>) -> ! {
-    abort()
-}
-
-#[cold]
-#[inline(never)]
-fn abort() -> ! {
-    unsafe {
-        core::arch::asm!("ud2", options(noreturn, nomem, nostack));
-    }
+    crate::arch::abort()
 }
 
 // ---------------------------------------------------------------------------
@@ -141,7 +117,6 @@ fn abort() -> ! {
 /// let vaddr = image_end();
 /// // vaddr is safe to use as the target of frame_map(...)
 /// ```
-#[expect(dead_code, reason = "used by VSpace module once implemented")]
 pub fn image_end() -> usize {
     unsafe extern "C" {
         static _end: u8;
