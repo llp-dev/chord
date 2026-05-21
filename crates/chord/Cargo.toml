@@ -15,8 +15,5 @@ sel4.workspace = true
 talc = "5.0"
 spinning_top = "0.3"
 
-[build-dependencies]
-cc = "1.2"
-
 [lints]
 workspace = true

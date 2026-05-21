@@ -8,6 +8,7 @@
 //!   detection.
 //! - [`bootstrap`] — `VSpace` bootstrap: allocates a 2 MiB large page and
 //!   maps it into the root task's address space.
+//! - [`time`] — TSC-based high-resolution clock with busy-wait support.
 //!
 //! # ABI
 //!
@@ -19,3 +20,4 @@ pub mod abort;
 pub mod bootstrap;
 pub mod cpu;
 pub mod start;
+pub mod time;

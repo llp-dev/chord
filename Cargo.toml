@@ -15,5 +15,11 @@ pedantic = "warn"
 nursery = "warn"
 cargo = "warn"
 
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
 [workspace.dependencies]
 sel4 = { git = "https://github.com/seL4/rust-sel4", tag = "v4.0.0" }

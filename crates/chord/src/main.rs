@@ -56,6 +56,7 @@ use bootstrap::cspace;
 use sel4::{BootInfoPtr, debug_println};
 
 use arch::{Arch, ArchBootstrap, CpuDetect};
+use arch::x86_64::time;
 
 /// seL4 root-task entry point.
 ///
@@ -95,6 +96,10 @@ extern "C" fn main(bootinfo: &BootInfoPtr) -> ! {
     debug_println!("[chord] C function test: chord_test() returned {c_result}");
 
     debug::dump_bootinfo(bootinfo);
+
+    time::init(bootinfo);
+    debug_println!("[chord] TSC frequency: {} MHz", time::tsc_freq_mhz());
+    debug_println!("[chord] timer base captured (ticks=0)");
 
     // VSpace bootstrap must run before Bootstrap::new because:
     // 1. Bootstrap::new calls expand_current_cspace, which switches CPtr
